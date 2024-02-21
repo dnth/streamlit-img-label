@@ -3,7 +3,7 @@ import re
 import numpy as np
 from PIL import Image
 from .annotation import output_xml, read_xml
-
+from pathlib import Path
 """
 .. module:: streamlit_img_label
    :synopsis: manage.
@@ -152,6 +152,33 @@ class ImageDirManager:
         self._files = [
             file for file in os.listdir(self._dir_name) if re.match(mask, file)
         ]
+        return self._files
+    
+    def get_files_with_annots(self, allow_types=["png", "jpg", "jpeg"]):
+        # Create a list to hold files that have a corresponding XML file
+        files_with_xml = []
+        
+        # Get all files in the directory
+        all_files = os.listdir(self._dir_name)
+        
+        # Iterate over each file in the directory
+        for file in all_files:
+            # Create a Path object for easy manipulation
+            file_path = Path(file)
+            
+            # Check if the file's extension is in the allowed types (case-insensitive)
+            if file_path.suffix[1:].lower() in allow_types:
+                # Construct the expected XML file name
+                xml_file_name = file_path.with_suffix('.xml').name
+                
+                # Check if the corresponding XML file exists
+                if xml_file_name in all_files:
+                    # If so, add the original file to the list
+                    files_with_xml.append(file)
+        
+        # Update the class attribute with the filtered list
+        self._files = files_with_xml
+        
         return self._files
 
     def get_exist_annotation_files(self):
