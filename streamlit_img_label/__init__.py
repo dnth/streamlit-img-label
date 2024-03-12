@@ -80,16 +80,16 @@ if not _RELEASE:
     idm = ImageDirManager(img_dir)
 
     if "files" not in st.session_state:
-        st.session_state["files"] = idm.get_all_files()
-        st.session_state["annotation_files"] = idm.get_exist_annotation_files()
+        st.session_state["files"] = idm.get_img_files()
+        st.session_state["annotation_files"] = idm.get_annotation_files()
         st.session_state["image_index"] = 0
     else:
         idm.set_all_files(st.session_state["files"])
         idm.set_annotation_files(st.session_state["annotation_files"])
 
     def refresh():
-        st.session_state["files"] = idm.get_all_files()
-        st.session_state["annotation_files"] = idm.get_exist_annotation_files()
+        st.session_state["files"] = idm.get_img_files()
+        st.session_state["annotation_files"] = idm.get_annotation_files()
         st.session_state["image_index"] = 0
 
     def next_image():

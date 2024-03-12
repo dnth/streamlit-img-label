@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: streamlit_img_label
+Version: 0.1.1
+Summary: Streamlit Image Annotation
+Home-page: https://github.com/lit26/streamlit-img-label
+Author: Tianning Li
+Author-email: ltianningli@gmail.com
+Requires-Python: >=3.6
+Description-Content-Type: text/plain
+License-File: LICENSE
+Requires-Dist: streamlit>=0.63
+
+It is a image annotation tool. You can use to do preprocessing of computer vision tasks.

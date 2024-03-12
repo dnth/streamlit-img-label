@@ -3,61 +3,30 @@ import re
 import numpy as np
 from PIL import Image
 from .annotation import output_xml, read_xml
-from pathlib import Path
-"""
-.. module:: streamlit_img_label
-   :synopsis: manage.
-.. moduleauthor:: Tianning Li <ltianningli@gmail.com>
-"""
-
 
 class ImageManager:
-    """ImageManager
-    Manage the image object.
-
-    Args:
-        filename(str): the image file.
-    """
-
-    def __init__(self, filename):
-        """initiate module"""
-        self._filename = filename
-        self._img = Image.open(filename)
+    def __init__(self, img_filename, xml_filename=None):
+        self._img_filename = img_filename
+        self._xml_filename = xml_filename or img_filename.replace(os.path.splitext(img_filename)[1], ".xml")
+        self._img = Image.open(img_filename)
         self._rects = []
         self._load_rects()
         self._resized_ratio_w = 1
         self._resized_ratio_h = 1
 
     def _load_rects(self):
-        rects_xml = read_xml(self._filename)
-        if rects_xml:
-            self._rects = rects_xml
+        if os.path.exists(self._xml_filename):
+            rects_xml = read_xml(self._xml_filename)
+            if rects_xml:
+                self._rects = rects_xml
 
     def get_img(self):
-        """get the image object
-
-        Returns:
-            img(PIL.Image): the image object.
-        """
         return self._img
 
     def get_rects(self):
-        """get the rects
-
-        Returns:
-            rects(list): the bounding boxes of the image.
-        """
         return self._rects
 
     def resizing_img(self, max_height=700, max_width=700):
-        """resizing the image by max_height and max_width.
-
-        Args:
-            max_height(int): the max_height of the frame.
-            max_width(int): the max_width of the frame.
-        Returns:
-            resized_img(PIL.Image): the resized image.
-        """
         resized_img = self._img.copy()
         if resized_img.height > max_height:
             ratio = max_height / resized_img.height
@@ -85,11 +54,6 @@ class ImageManager:
         return resized_rect
 
     def get_resized_rects(self):
-        """get resized the rects according to the resized image.
-
-        Returns:
-            resized_rects(list): the resized bounding boxes of the image.
-        """
         return [self._resize_rect(rect) for rect in self._rects]
 
     def _chop_box_img(self, rect):
@@ -116,92 +80,50 @@ class ImageManager:
         return (Image.fromarray(prev_img), label)
 
     def init_annotation(self, rects):
-        """init annotation for current rects.
-
-        Args:
-            rects(list): the bounding boxes of the image.
-        Returns:
-            prev_img(list): list of preview images with default label.
-        """
         self._current_rects = rects
         return [self._chop_box_img(rect) for rect in self._current_rects]
 
     def set_annotation(self, index, label):
-        """set the label of the image.
-
-        Args:
-            index(int): the index of the list of bounding boxes of the image.
-            label(str): the label of the bounding box
-        """
         self._current_rects[index]["label"] = label
 
     def save_annotation(self):
-        """output the xml annotation file."""
-        output_xml(self._filename, self._img, self._current_rects)
+        output_xml(self._xml_filename, self._img, self._current_rects)
 
 
 class ImageDirManager:
-    def __init__(self, dir_name):
-        self._dir_name = dir_name
-        self._files = []
-        self._annotations_files = []
+    def __init__(self, img_dir_name, xml_dir_name=None):
+        self._img_dir_name = img_dir_name
+        self._xml_dir_name = xml_dir_name or img_dir_name
+        self._img_files = []
+        self._xml_files = []
 
     def get_all_files(self, allow_types=["png", "jpg", "jpeg"]):
         allow_types += [i.upper() for i in allow_types]
         mask = ".*\.[" + "|".join(allow_types) + "]"
-        self._files = [
-            file for file in os.listdir(self._dir_name) if re.match(mask, file)
-        ]
-        return self._files
-    
-    def get_files_with_annots(self, allow_types=["png", "jpg", "jpeg"]):
-        # Create a list to hold files that have a corresponding XML file
-        files_with_xml = []
-        
-        # Get all files in the directory
-        all_files = os.listdir(self._dir_name)
-        
-        # Iterate over each file in the directory
-        for file in all_files:
-            # Create a Path object for easy manipulation
-            file_path = Path(file)
-            
-            # Check if the file's extension is in the allowed types (case-insensitive)
-            if file_path.suffix[1:].lower() in allow_types:
-                # Construct the expected XML file name
-                xml_file_name = file_path.with_suffix('.xml').name
-                
-                # Check if the corresponding XML file exists
-                if xml_file_name in all_files:
-                    # If so, add the original file to the list
-                    files_with_xml.append(file)
-        
-        # Update the class attribute with the filtered list
-        self._files = files_with_xml
-        
-        return self._files
+        self._img_files = [file for file in os.listdir(self._img_dir_name) if re.match(mask, file)]
+        self._xml_files = [file.split(".")[0] + ".xml" for file in self._img_files]
+        return self._img_files
 
     def get_exist_annotation_files(self):
-        self._annotations_files = [
-            file for file in os.listdir(self._dir_name) if re.match(".*.xml", file)
-        ]
+        self._annotations_files = [file for file in os.listdir(self._xml_dir_name) if re.match(".*.xml", file)]
         return self._annotations_files
 
     def set_all_files(self, files):
-        self._files = files
+        self._img_files = files
+        self._xml_files = [file.split(".")[0] + ".xml" for file in self._img_files]
 
     def set_annotation_files(self, files):
         self._annotations_files = files
 
     def get_image(self, index):
-        return self._files[index]
+        img_file = os.path.join(self._img_dir_name, self._img_files[index])
+        xml_file = os.path.join(self._xml_dir_name, self._xml_files[index])
+        return ImageManager(img_file, xml_file)
 
     def _get_next_image_helper(self, index):
-        while index < len(self._files) - 1:
+        while index < len(self._img_files) - 1:
             index += 1
-            image_file = self._files[index]
-            image_file_name = image_file.split(".")[0]
-            if f"{image_file_name}.xml" not in self._annotations_files:
+            if self._xml_files[index] not in self._annotations_files:
                 return index
         return None
 
@@ -209,5 +131,5 @@ class ImageDirManager:
         image_index = self._get_next_image_helper(index)
         if image_index:
             return image_index
-        if not image_index and len(self._files) != len(self._annotations_files):
+        if not image_index and len(self._img_files) != len(self._annotations_files):
             return self._get_next_image_helper(0)
