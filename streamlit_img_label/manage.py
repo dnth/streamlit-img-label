@@ -104,9 +104,34 @@ class ImageDirManager:
         self._xml_files = [file.split(".")[0] + ".xml" for file in self._img_files]
         return self._img_files
 
-    def get_exist_annotation_files(self):
-        self._annotations_files = [file for file in os.listdir(self._xml_dir_name) if re.match(".*.xml", file)]
+    def get_to_relabel_files(self, txt_file, allow_types=["png", "jpg", "jpeg"]):
+        with open(txt_file, 'r') as file:
+            txt_files = [line.strip() for line in file]
+
+        allow_types += [i.upper() for i in allow_types]
+        mask = ".*\.[" + "|".join(allow_types) + "]"
+
+        self._img_files = [file for file in os.listdir(self._img_dir_name) if re.match(mask, file)]
+        self._xml_files = [file.split(".")[0] + ".xml" for file in self._img_files]
+
+        # Extract the stem from txt_files
+        txt_stems = [os.path.splitext(filename)[0] for filename in txt_files]
+
+        # Filter list
+        self._img_files = [filename for filename in self._img_files if os.path.splitext(filename)[0] in txt_stems]
+        self._xml_files = [filename for filename in self._xml_files if os.path.splitext(filename)[0] in txt_stems]
+
+        return self._img_files
+
+    def get_exist_annotation_files(self, txt_file=None):
+        if txt_file:
+            with open(txt_file, 'r') as file:
+                self._annotations_files = [line.strip() for line in file]
+        else:
+            self._annotations_files = [file for file in os.listdir(self._xml_dir_name) if re.match(r".*\.xml", file)]
+        
         return self._annotations_files
+
 
     def set_all_files(self, files):
         self._img_files = files
