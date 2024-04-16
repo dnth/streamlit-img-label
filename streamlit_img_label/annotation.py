@@ -44,7 +44,7 @@ def read_xml(img_file):
     return rects
 
 
-def output_xml(img_file, img, rects):
+def output_xml(filename, img, rects):
     """output_xml
     Output the xml image annotation file
 
@@ -53,8 +53,10 @@ def output_xml(img_file, img, rects):
         img(PIL.Image): the image object.
         rects(list): the bounding boxes of the image.
     """
-    file_name = img_file.split(".")[0]
-    writer = Writer(img_file, img.width, img.height)
+    xml_filename = filename.split(".")[0]
+    img_filename = xml_filename.split("/")[-1] + ".jpg"
+    
+    writer = Writer(img_filename, img.width, img.height)
     for box in rects:
         xmin = box["left"]
         ymin = box["top"]
@@ -62,4 +64,4 @@ def output_xml(img_file, img, rects):
         ymax = box["top"] + box["height"]
 
         writer.addObject(box["label"], xmin, ymin, xmax, ymax)
-    writer.save(f"{file_name}.xml")
+    writer.save(f"{xml_filename}.xml")
