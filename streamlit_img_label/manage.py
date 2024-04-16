@@ -14,6 +14,8 @@ class ImageManager:
         self._resized_ratio_w = 1
         self._resized_ratio_h = 1
 
+        self._current_rects = None
+
     def _load_rects(self):
         if os.path.exists(self._xml_filename):
             rects_xml = read_xml(self._xml_filename)

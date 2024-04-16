@@ -57,11 +57,14 @@ def output_xml(filename, img, rects):
     img_filename = xml_filename.split("/")[-1] + ".jpg"
     
     writer = Writer(img_filename, img.width, img.height)
-    for box in rects:
-        xmin = box["left"]
-        ymin = box["top"]
-        xmax = box["left"] + box["width"]
-        ymax = box["top"] + box["height"]
 
-        writer.addObject(box["label"], xmin, ymin, xmax, ymax)
+    if rects is not None:
+        for box in rects:
+            xmin = box["left"]
+            ymin = box["top"]
+            xmax = box["left"] + box["width"]
+            ymax = box["top"] + box["height"]
+
+            writer.addObject(box["label"], xmin, ymin, xmax, ymax)
+    
     writer.save(f"{xml_filename}.xml")
